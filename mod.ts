@@ -1,9 +1,15 @@
 import { encodeBase64 } from "@std/encoding/base64";
 import { as, ensure, is } from "@core/unknownutil";
-import type { Jsonable, Predicate } from "@core/unknownutil";
 
+/** Re-exported predicate type from unknownutil. */
+export type Predicate<T> = import("@core/unknownutil").Predicate<T>;
+/** Re-exported Jsonable type from unknownutil. */
+export type Jsonable = import("@core/unknownutil").Jsonable;
+
+/** Fetch function signature used by the client. */
 export type FetchLike = typeof fetch;
 
+/** Client construction options. */
 export interface InkdropClientOptions {
   baseUrl?: string;
   username: string;
@@ -12,6 +18,7 @@ export interface InkdropClientOptions {
   headers?: HeadersInit;
 }
 
+/** Low-level request options. */
 export interface RequestOptions {
   params?: Params;
   headers?: HeadersInit;
@@ -19,6 +26,7 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
+/** Error thrown for non-2xx responses. */
 export class InkdropError<T = unknown> extends Error {
   status: number;
   statusText: string;
@@ -36,6 +44,7 @@ export class InkdropError<T = unknown> extends Error {
   }
 }
 
+/** Build a Basic Authorization header value. */
 export function basicAuthHeader(username: string, password: string): string {
   const encoded = encodeBase64(
     new TextEncoder().encode(`${username}:${password}`),
@@ -83,12 +92,18 @@ export class InkdropClient {
   readonly password: string;
   private readonly fetcher: FetchLike;
   private readonly defaultHeaders: Headers;
+  /** Notes resource helper. */
   readonly notes: NotesAPI;
+  /** Books resource helper. */
   readonly books: BooksAPI;
+  /** Tags resource helper. */
   readonly tags: TagsAPI;
+  /** Files resource helper. */
   readonly files: FilesAPI;
+  /** Doc-by-id helper. */
   readonly docs: DocsAPI;
 
+  /** Create a client for Inkdrop Local HTTP Server. */
   constructor(options: InkdropClientOptions) {
     this.baseUrl = options.baseUrl ?? "http://127.0.0.1:19840";
     this.username = options.username;
@@ -111,6 +126,7 @@ export class InkdropClient {
     this.docs = new DocsAPI(this);
   }
 
+  /** Perform a low-level HTTP request. */
   async request<T>(
     method: string,
     path: string,
@@ -163,10 +179,12 @@ export class InkdropClient {
     return payload as T;
   }
 
+  /** GET helper. */
   get<T>(path: string, options?: Omit<RequestOptions, "body">): Promise<T> {
     return this.request<T>("GET", path, options);
   }
 
+  /** POST helper. */
   post<T>(
     path: string,
     body?: unknown,
@@ -175,22 +193,28 @@ export class InkdropClient {
     return this.request<T>("POST", path, { ...options, body });
   }
 
+  /** DELETE helper. */
   delete<T>(path: string, options?: Omit<RequestOptions, "body">): Promise<T> {
     return this.request<T>("DELETE", path, options);
   }
 }
 
+/** Document ID type. */
 export type DocId = string;
 
+/** Info returned by the root endpoint. */
 export interface InkdropServerInfo {
   app: string;
   version: string;
   apiVersion: string;
 }
 
+/** Note status values. */
 export type NoteStatus = "none" | "active" | "onHold" | "completed" | "dropped";
+/** Note share visibility. */
 export type NoteShare = "private" | "public";
 
+/** Query parameter value types. */
 export type ParamValue =
   | string
   | number
@@ -199,8 +223,10 @@ export type ParamValue =
   | undefined
   | Array<string | number | boolean>;
 
+/** Query parameter map. */
 export type Params = Record<string, ParamValue>;
 
+/** Query parameters for listing notes. */
 export interface NoteListParams extends Params {
   keyword?: string;
   limit?: number;
@@ -209,32 +235,38 @@ export interface NoteListParams extends Params {
   descending?: boolean;
 }
 
+/** Query parameters for listing books. */
 export interface BookListParams extends Params {
   limit?: number;
   skip?: number;
 }
 
+/** Query parameters for listing tags. */
 export interface TagListParams extends Params {
   limit?: number;
   skip?: number;
 }
 
+/** Query parameters for listing files. */
 export interface FileListParams extends Params {
   limit?: number;
   skip?: number;
 }
 
+/** Query parameters for fetching a doc by id. */
 export interface DocGetParams extends Params {
   rev?: string;
   attachments?: boolean;
 }
 
+/** Mutation response from create/update/delete. */
 export interface MutationResponse {
   ok: boolean;
   id: string;
   rev: string;
 }
 
+/** Common fields for Inkdrop docs. */
 export interface InkdropDocBase {
   _id: DocId;
   _rev: string;
@@ -242,6 +274,7 @@ export interface InkdropDocBase {
   updatedAt?: number;
 }
 
+/** Note document shape (markdown). */
 export interface NoteDoc extends InkdropDocBase {
   doctype: "markdown";
   bookId: DocId;
@@ -256,23 +289,29 @@ export interface NoteDoc extends InkdropDocBase {
   tags?: DocId[];
 }
 
+/** Note creation/update input. */
 export type NoteInput = Partial<NoteDoc> & { doctype?: "markdown" };
 
+/** Book document shape. */
 export interface BookDoc extends InkdropDocBase {
   name: string;
   parentBookId?: DocId;
 }
 
+/** Book creation/update input. */
 export type BookInput = Partial<BookDoc> & { name: string };
 
+/** Tag document shape. */
 export interface TagDoc extends InkdropDocBase {
   name: string;
   color?: string;
   count?: number;
 }
 
+/** Tag creation/update input. */
 export type TagInput = Partial<TagDoc> & { name: string };
 
+/** Attachment metadata for file documents. */
 export interface AttachmentData {
   digest: string;
   content_type: string;
@@ -280,6 +319,7 @@ export interface AttachmentData {
   data?: Jsonable;
 }
 
+/** File document shape. */
 export interface FileDoc extends InkdropDocBase {
   name: string;
   contentType?: string;
@@ -290,20 +330,24 @@ export interface FileDoc extends InkdropDocBase {
   _attachments?: Record<string, AttachmentData>;
 }
 
+/** File creation input. */
 export type FileInput = Partial<FileDoc> & { name: string };
 
+/** Runtime validator for InkdropServerInfo. */
 export const isInkdropServerInfo: Predicate<InkdropServerInfo> = is.ObjectOf({
   app: is.String,
   version: is.String,
   apiVersion: is.String,
 });
 
+/** Runtime validator for MutationResponse. */
 export const isMutationResponse: Predicate<MutationResponse> = is.ObjectOf({
   ok: is.Boolean,
   id: is.String,
   rev: is.String,
 });
 
+/** Runtime validator for InkdropDocBase. */
 export const isInkdropDocBase: Predicate<InkdropDocBase> = is.ObjectOf({
   _id: is.String,
   _rev: is.String,
@@ -324,6 +368,7 @@ const isNoteShare: Predicate<NoteShare> = is.UnionOf([
   is.LiteralOf("public"),
 ]);
 
+/** Runtime validator for NoteDoc. */
 export const isNoteDoc: Predicate<NoteDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
@@ -341,6 +386,7 @@ export const isNoteDoc: Predicate<NoteDoc> = is.IntersectionOf([
   }),
 ]);
 
+/** Runtime validator for BookDoc. */
 export const isBookDoc: Predicate<BookDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
@@ -349,6 +395,7 @@ export const isBookDoc: Predicate<BookDoc> = is.IntersectionOf([
   }),
 ]);
 
+/** Runtime validator for TagDoc. */
 export const isTagDoc: Predicate<TagDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
@@ -358,6 +405,7 @@ export const isTagDoc: Predicate<TagDoc> = is.IntersectionOf([
   }),
 ]);
 
+/** Runtime validator for AttachmentData. */
 export const isAttachmentData: Predicate<AttachmentData> = is.ObjectOf({
   digest: is.String,
   content_type: is.String,
@@ -365,6 +413,7 @@ export const isAttachmentData: Predicate<AttachmentData> = is.ObjectOf({
   data: as.Optional(is.Jsonable),
 });
 
+/** Runtime validator for FileDoc. */
 export const isFileDoc: Predicate<FileDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
@@ -378,6 +427,7 @@ export const isFileDoc: Predicate<FileDoc> = is.IntersectionOf([
   }),
 ]);
 
+/** Runtime validator for any supported doc type. */
 export const isAnyDoc: Predicate<NoteDoc | BookDoc | TagDoc | FileDoc> = is
   .UnionOf([
     isNoteDoc,
@@ -386,15 +436,18 @@ export const isAnyDoc: Predicate<NoteDoc | BookDoc | TagDoc | FileDoc> = is
     isFileDoc,
   ]);
 
+/** Notes resource API. */
 export class NotesAPI {
   constructor(private readonly client: InkdropClient) {}
 
+  /** List notes with optional query params. */
   list<T = NoteDoc>(params?: NoteListParams): Promise<T[]> {
     return this.client.get<unknown>("/notes", { params }).then((value) =>
       ensure(value, is.ArrayOf(isNoteDoc)) as T[]
     );
   }
 
+  /** Create or update a note. */
   upsert<T = MutationResponse>(note: NoteInput): Promise<T> {
     return this.client.post<unknown>("/notes", note).then((value) =>
       ensure(value, isMutationResponse) as T
@@ -402,15 +455,18 @@ export class NotesAPI {
   }
 }
 
+/** Books resource API. */
 export class BooksAPI {
   constructor(private readonly client: InkdropClient) {}
 
+  /** List books with optional query params. */
   list<T = BookDoc>(params?: BookListParams): Promise<T[]> {
     return this.client.get<unknown>("/books", { params }).then((value) =>
       ensure(value, is.ArrayOf(isBookDoc)) as T[]
     );
   }
 
+  /** Create or update a book. */
   upsert<T = MutationResponse>(book: BookInput): Promise<T> {
     return this.client.post<unknown>("/books", book).then((value) =>
       ensure(value, isMutationResponse) as T
@@ -418,15 +474,18 @@ export class BooksAPI {
   }
 }
 
+/** Tags resource API. */
 export class TagsAPI {
   constructor(private readonly client: InkdropClient) {}
 
+  /** List tags with optional query params. */
   list<T = TagDoc>(params?: TagListParams): Promise<T[]> {
     return this.client.get<unknown>("/tags", { params }).then((value) =>
       ensure(value, is.ArrayOf(isTagDoc)) as T[]
     );
   }
 
+  /** Create or update a tag. */
   upsert<T = MutationResponse>(tag: TagInput): Promise<T> {
     return this.client.post<unknown>("/tags", tag).then((value) =>
       ensure(value, isMutationResponse) as T
@@ -434,15 +493,18 @@ export class TagsAPI {
   }
 }
 
+/** Files resource API. */
 export class FilesAPI {
   constructor(private readonly client: InkdropClient) {}
 
+  /** List files with optional query params. */
   list<T = FileDoc>(params?: FileListParams): Promise<T[]> {
     return this.client.get<unknown>("/files", { params }).then((value) =>
       ensure(value, is.ArrayOf(isFileDoc)) as T[]
     );
   }
 
+  /** Create a file document. */
   create<T = MutationResponse>(file: FileInput): Promise<T> {
     return this.client.post<unknown>("/files", file).then((value) =>
       ensure(value, isMutationResponse) as T
@@ -450,9 +512,11 @@ export class FilesAPI {
   }
 }
 
+/** Doc-by-id resource API. */
 export class DocsAPI {
   constructor(private readonly client: InkdropClient) {}
 
+  /** Get a document by id. */
   get<T = NoteDoc | BookDoc | TagDoc | FileDoc>(
     docId: DocId,
     params?: DocGetParams,
@@ -462,6 +526,7 @@ export class DocsAPI {
     );
   }
 
+  /** Delete a document by id. */
   delete<T = MutationResponse>(docId: DocId): Promise<T> {
     return this.client.delete<unknown>(`/${docId}`).then((value) =>
       ensure(value, isMutationResponse) as T

@@ -83,7 +83,6 @@ deno task fmt:check
 deno task test
 deno task lint
 deno task fmt:check
-deno doc --lint mod.ts
 ```
 
 4. Tag and push:
