@@ -188,6 +188,9 @@ export interface InkdropServerInfo {
   apiVersion: string;
 }
 
+export type NoteStatus = "none" | "active" | "onHold" | "completed" | "dropped";
+export type NoteShare = "private" | "public";
+
 export type ParamValue =
   | string
   | number
@@ -242,8 +245,8 @@ export interface InkdropDocBase {
 export interface NoteDoc extends InkdropDocBase {
   doctype: "markdown";
   bookId: DocId;
-  status: "none" | "active" | "onHold" | "completed" | "dropped";
-  share?: "private" | "public";
+  status: NoteStatus;
+  share?: NoteShare;
   migratedBy?: string;
   numOfTasks?: number;
   numOfCheckedTasks?: number;
@@ -316,7 +319,7 @@ const isNoteStatus: Predicate<NoteDoc["status"]> = is.UnionOf([
   is.LiteralOf("dropped"),
 ]);
 
-const isNoteShare: Predicate<NonNullable<NoteDoc["share"]>> = is.UnionOf([
+const isNoteShare: Predicate<NoteShare> = is.UnionOf([
   is.LiteralOf("private"),
   is.LiteralOf("public"),
 ]);
@@ -375,12 +378,13 @@ export const isFileDoc: Predicate<FileDoc> = is.IntersectionOf([
   }),
 ]);
 
-export const isAnyDoc: Predicate<NoteDoc | BookDoc | TagDoc | FileDoc> = is.UnionOf([
-  isNoteDoc,
-  isBookDoc,
-  isTagDoc,
-  isFileDoc,
-]);
+export const isAnyDoc: Predicate<NoteDoc | BookDoc | TagDoc | FileDoc> = is
+  .UnionOf([
+    isNoteDoc,
+    isBookDoc,
+    isTagDoc,
+    isFileDoc,
+  ]);
 
 export class NotesAPI {
   constructor(private readonly client: InkdropClient) {}

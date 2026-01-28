@@ -63,6 +63,7 @@ Types:
 
 - `NoteDoc`, `BookDoc`, `TagDoc`, `FileDoc`
 - `NoteInput`, `BookInput`, `TagInput`, `FileInput`
+- `NoteStatus`, `NoteShare`
 
 ## Development
 
