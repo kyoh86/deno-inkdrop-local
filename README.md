@@ -92,11 +92,9 @@ git tag vX.Y.Z
 git push --tags
 ```
 
-5. Publish to JSR:
+5. Publish to JSR (via GitHub Actions):
 
-```sh
-deno publish
-```
+Trigger the `jsr-publish` workflow, or push the tag above.
 
 ## Examples
 
