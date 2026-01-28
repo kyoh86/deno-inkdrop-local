@@ -68,6 +68,11 @@ deno task test
 
 See `examples/list_notes.ts` for a real request against a local Inkdrop server.
 
+```sh
+INKDROP_USERNAME=... INKDROP_PASSWORD=... \
+  deno run --allow-net --allow-env examples/list_notes.ts
+```
+
 ## License
 
 MIT
