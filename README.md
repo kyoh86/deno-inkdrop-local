@@ -1,4 +1,4 @@
-# deno-local-inkdrop
+# deno-inkdrop-local
 
 Deno client for Inkdrop's Local HTTP Server.
 
