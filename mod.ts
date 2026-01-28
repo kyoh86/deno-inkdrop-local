@@ -1,10 +1,7 @@
 import { encodeBase64 } from "@std/encoding/base64";
 import { as, ensure, is } from "@core/unknownutil";
-
-/** Re-exported predicate type from unknownutil. */
-export type Predicate<T> = import("@core/unknownutil").Predicate<T>;
-/** Re-exported Jsonable type from unknownutil. */
-export type Jsonable = import("@core/unknownutil").Jsonable;
+import type { Jsonable, Predicate } from "@core/unknownutil";
+export type { Jsonable, Predicate };
 
 /** Fetch function signature used by the client. */
 export type FetchLike = typeof fetch;
