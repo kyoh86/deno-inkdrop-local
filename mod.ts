@@ -203,7 +203,45 @@ export class InkdropClient {
 }
 
 /** Document ID type. */
-export type DocId = string;
+export type DocId = NoteId | BookId | TagId | FileId;
+export const isDocId: Predicate<DocId> = is.UnionOf([
+  isNoteId,
+  isBookId,
+  isTagId,
+  isFileId,
+]);
+
+/** Note ID type. */
+export type NoteId = `note:${string}`;
+
+/** Runtime validator for NoteId */
+export function isNoteId(x: unknown): x is NoteId {
+  return typeof x === "string" && x.startsWith("note:");
+}
+
+/** Notebook ID type. */
+export type BookId = `book:${string}`;
+
+/** Runtime validator for BookId */
+export function isBookId(x: unknown): x is BookId {
+  return typeof x === "string" && x.startsWith("book:");
+}
+
+/** Tag ID type. */
+export type TagId = `tag:${string}`;
+
+/** Runtime validator for TagId */
+export function isTagId(x: unknown): x is TagId {
+  return typeof x === "string" && x.startsWith("tag:");
+}
+
+/** File ID type. */
+export type FileId = `file:${string}`;
+
+/** Runtime validator for FileId */
+export function isFileId(x: unknown): x is FileId {
+  return typeof x === "string" && x.startsWith("file:");
+}
 
 /** Info returned by the root endpoint. */
 export interface InkdropServerInfo {
@@ -271,7 +309,6 @@ export interface MutationResponse {
 
 /** Common fields for Inkdrop docs. */
 export interface InkdropDocBase {
-  _id: DocId;
   _rev: string;
   createdAt?: number;
   updatedAt?: number;
@@ -279,8 +316,9 @@ export interface InkdropDocBase {
 
 /** Note document shape (markdown). */
 export interface NoteDoc extends InkdropDocBase {
+  _id: NoteId;
   doctype: "markdown";
-  bookId: DocId;
+  bookId: BookId;
   status: NoteStatus;
   share?: NoteShare;
   migratedBy?: string;
@@ -289,7 +327,7 @@ export interface NoteDoc extends InkdropDocBase {
   pinned?: boolean;
   title?: string;
   body?: string;
-  tags?: DocId[];
+  tags?: TagId[];
 }
 
 /** Note creation/update input. */
@@ -297,6 +335,7 @@ export type NoteInput = Partial<NoteDoc> & { doctype?: "markdown" };
 
 /** Book document shape. */
 export interface BookDoc extends InkdropDocBase {
+  _id: BookId;
   name: string;
   parentBookId?: DocId;
 }
@@ -306,6 +345,7 @@ export type BookInput = Partial<BookDoc> & { name: string };
 
 /** Tag document shape. */
 export interface TagDoc extends InkdropDocBase {
+  _id: TagId;
   name: string;
   color?: string;
   count?: number;
@@ -324,6 +364,7 @@ export interface AttachmentData {
 
 /** File document shape. */
 export interface FileDoc extends InkdropDocBase {
+  _id: FileId;
   name: string;
   contentType?: string;
   contentLength?: number;
@@ -352,7 +393,6 @@ export const isMutationResponse: Predicate<MutationResponse> = is.ObjectOf({
 
 /** Runtime validator for InkdropDocBase. */
 export const isInkdropDocBase: Predicate<InkdropDocBase> = is.ObjectOf({
-  _id: is.String,
   _rev: is.String,
   createdAt: as.Optional(is.Number),
   updatedAt: as.Optional(is.Number),
@@ -375,8 +415,9 @@ const isNoteShare: Predicate<NoteShare> = is.UnionOf([
 export const isNoteDoc: Predicate<NoteDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
+    _id: isNoteId,
     doctype: is.LiteralOf("markdown"),
-    bookId: is.String,
+    bookId: isBookId,
     status: isNoteStatus,
     share: as.Optional(isNoteShare),
     migratedBy: as.Optional(is.String),
@@ -385,7 +426,7 @@ export const isNoteDoc: Predicate<NoteDoc> = is.IntersectionOf([
     pinned: as.Optional(is.Boolean),
     title: as.Optional(is.String),
     body: as.Optional(is.String),
-    tags: as.Optional(is.ArrayOf(is.String)),
+    tags: as.Optional(is.ArrayOf(isTagId)),
   }),
 ]);
 
@@ -393,8 +434,9 @@ export const isNoteDoc: Predicate<NoteDoc> = is.IntersectionOf([
 export const isBookDoc: Predicate<BookDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
+    _id: isBookId,
     name: is.String,
-    parentBookId: as.Optional(is.String),
+    parentBookId: as.Optional(isBookId),
   }),
 ]);
 
@@ -402,6 +444,7 @@ export const isBookDoc: Predicate<BookDoc> = is.IntersectionOf([
 export const isTagDoc: Predicate<TagDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
+    _id: isTagId,
     name: is.String,
     color: as.Optional(is.String),
     count: as.Optional(is.Number),
@@ -420,12 +463,13 @@ export const isAttachmentData: Predicate<AttachmentData> = is.ObjectOf({
 export const isFileDoc: Predicate<FileDoc> = is.IntersectionOf([
   isInkdropDocBase,
   is.ObjectOf({
+    _id: isFileId,
     name: is.String,
     contentType: as.Optional(is.String),
     contentLength: as.Optional(is.Number),
     md5digest: as.Optional(is.String),
     revpos: as.Optional(is.Number),
-    publicIn: as.Optional(is.ArrayOf(is.String)),
+    publicIn: as.Optional(is.ArrayOf(isDocId)),
     _attachments: as.Optional(is.RecordOf(isAttachmentData, is.String)),
   }),
 ]);
